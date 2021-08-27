@@ -1,8 +1,8 @@
 import doctest
 
-import {{ name }}
+import k3redisutil
 
 
 def load_tests(loader, tests, ignore):
-    tests.addTests(doctest.DocTestSuite({{ name }}))
+    tests.addTests(doctest.DocTestSuite(k3redisutil))
     return tests
