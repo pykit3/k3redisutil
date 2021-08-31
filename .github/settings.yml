@@ -1,6 +1,6 @@
 _extends: gh-config
 
 repository:
-  description: no desc
+  description: For using redis more easily.
   homepage: https://blog.openacid.com
-  topics: tag1, tag2
+  topics: python, redis
