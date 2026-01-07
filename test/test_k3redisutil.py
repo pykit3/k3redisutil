@@ -16,7 +16,7 @@ import k3utfjson
 
 dd = k3ut.dd
 
-redis_tag = "daocloud.io/redis:3.2.3"
+redis_tag = "redis:7-alpine"
 
 redis_port = 6379
 
