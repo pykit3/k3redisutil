@@ -56,35 +56,33 @@ def wait_serve(ip_port, timeout=5):
 
     while time.time() < t:
         try:
-            rcl.hget('foo', 'foo')
-            logger.info('redis is ready: ' + repr(ip_port))
+            rcl.hget("foo", "foo")
+            logger.info("redis is ready: " + repr(ip_port))
             return
 
         except redis.ConnectionError as e:
-            logger.info('can not connect to redis: ' +
-                        repr(ip_port) + ' ' + repr(e))
+            logger.info("can not connect to redis: " + repr(ip_port) + " " + repr(e))
             time.sleep(0.1)
             continue
     else:
-        logger.error('can not connect to redis: ' + repr(ip_port))
+        logger.error("can not connect to redis: " + repr(ip_port))
         raise
     # if redis does not respond in `timeout` seconds.
 
 
 class RedisChannel(object):
-
-    '''
+    """
     send message `data` through `channel`.
     `channel` is a list in redis.
     `peer` is "client" or "server".
 
     send is a rpush operation that adds an item to the end of a list.
     recv is a lpop operation that pops an item from the start of a list.
-    '''
+    """
 
     other_peer = {
-        'client': 'server',
-        'server': 'client',
+        "client": "server",
+        "server": "client",
     }
 
     def __init__(self, ip_port, channel, peer, timeout=None):
@@ -124,13 +122,12 @@ class RedisChannel(object):
 
         # convert ['a', 'b'] to '/a/b'
         if isinstance(channel, (list, tuple)):
-            channel = '/' + '/'.join(channel)
+            channel = "/" + "/".join(channel)
 
         self.channel = channel
         self.peer = peer.lower()
-        self.send_list_name = '/'.join([self.channel, self.peer])
-        self.recv_list_name = '/'.join([self.channel,
-                                        self.other_peer[self.peer]])
+        self.send_list_name = "/".join([self.channel, self.peer])
+        self.recv_list_name = "/".join([self.channel, self.other_peer[self.peer]])
         self.timeout = timeout
 
     def send_msg(self, data):
@@ -239,34 +236,31 @@ class RedisChannel(object):
         :return: a list of channel names.
         """
         if isinstance(prefix, (list, tuple)):
-            _prefix = '/' + '/'.join(prefix) + '/'
+            _prefix = "/" + "/".join(prefix) + "/"
         else:
             _prefix = prefix
 
-        if not _prefix.startswith('/'):
-            raise ValueError(
-                'prefix must starts with "/", but:' + repr(prefix))
+        if not _prefix.startswith("/"):
+            raise ValueError('prefix must starts with "/", but:' + repr(prefix))
 
-        if _prefix.endswith('*'):
-            raise ValueError(
-                'prefix must NOT ends with "*", but:' + repr(prefix))
+        if _prefix.endswith("*"):
+            raise ValueError('prefix must NOT ends with "*", but:' + repr(prefix))
 
-        if not _prefix.endswith('/'):
+        if not _prefix.endswith("/"):
             raise ValueError('prefix must ends with "/", but:' + repr(prefix))
 
-        _prefix = _prefix + '*'
+        _prefix = _prefix + "*"
         channels = self.rcl.keys(_prefix)
 
         rst = []
         for c in channels:
-
             for k in self.other_peer:
-                k = '/' + k
+                k = "/" + k
                 if c.endswith(k.encode()):
-                    c = c[:-len(k)]
+                    c = c[: -len(k)]
                     break
             else:
-                logger.info('not a channel: ' + repr(c))
+                logger.info("not a channel: " + repr(c))
                 continue
 
             if c not in rst:
@@ -277,6 +271,6 @@ class RedisChannel(object):
 
 def normalize_ip_port(ip_port):
     if isinstance(ip_port, int):
-        ip_port = ('127.0.0.1', ip_port)
+        ip_port = ("127.0.0.1", ip_port)
 
     return ip_port

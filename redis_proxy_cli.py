@@ -18,6 +18,7 @@ class RedisProxyError(Exception):
     The base class of other exceptions of `RedisProxyClient`.
     It is a subclass of `Exception`.
     """
+
     pass
 
 
@@ -26,6 +27,7 @@ class SendRequestError(RedisProxyError):
     It is a subclass of `redisutil.RedisProxyError`.
     Raise if failed to send request to redis proxy server.
     """
+
     pass
 
 
@@ -34,6 +36,7 @@ class KeyNotFoundError(RedisProxyError):
     It is a subclass of `redisutil.RedisProxyError`.
     Raise if key not found (redis proxy server return a `404`).
     """
+
     pass
 
 
@@ -43,6 +46,7 @@ class ServerResponseError(RedisProxyError):
     Raise if http-status not in `(200, 404)` return from redis proxy server.
 
     """
+
     pass
 
 
@@ -85,8 +89,9 @@ def _retry(func):
                     return func(self, verb, *args)
 
                 except (k3http.HttpError, socket.error) as e:
-                    logger.exception('{e} while send request to redis proxy with {ip}:{p}'.format(
-                        e=repr(e), ip=ip, p=port))
+                    logger.exception(
+                        "{e} while send request to redis proxy with {ip}:{p}".format(e=repr(e), ip=ip, p=port)
+                    )
                     err_list.append(e)
 
         else:
@@ -96,13 +101,12 @@ def _retry(func):
 
 
 class SetAPI(object):
-
     def __init__(self, cli, redis_op, mtd_info):
         self.cli = cli
         self.redis_op = redis_op.upper()
         self.http_mtd = mtd_info[0]
         self.args_count = mtd_info[1]
-        self.opts = list(mtd_info[2]) + ['retry']
+        self.opts = list(mtd_info[2]) + ["retry"]
 
     def api(self, *args, **argkv):
         mtd_args = []
@@ -125,7 +129,7 @@ class SetAPI(object):
             qs[qs_keys.pop()] = mtd_args.pop()
 
         body = None
-        if self.http_mtd == 'PUT':
+        if self.http_mtd == "PUT":
             body = k3utfjson.dump(mtd_args.pop())
 
         path = [self.redis_op] + mtd_args
@@ -135,154 +139,147 @@ class SetAPI(object):
 
 class RedisProxyClient(object):
     """
-    redis operation, http method, count of args, optional args name
+     redis operation, http method, count of args, optional args name
 
-    ### RedisProxyClient.delete
-    Delete the specified key.
-    Do nothing if the key doesn’t exist.
+     ### RedisProxyClient.delete
+     Delete the specified key.
+     Do nothing if the key doesn’t exist.
 
-    **arguments**:
-    `key`:specifies the key to redis.
-    `retry`:try to send request for another N times while failed to send request.
-    By default, it is `0`.
+     **arguments**:
+     `key`:specifies the key to redis.
+     `retry`:try to send request for another N times while failed to send request.
+     By default, it is `0`.
 
-    **return**: None
-    ###  RedisProxyClient.get
-    Get the value with `key`. Raise a `redisutil.KeyNotFoundError` if the key doesn’t exist.
-
-   `retry`:try to send request for another N times while failed to send request.
-    By default, it is `0`.
-
-    **return**: the value at `key`.
-
-    ### RedisProxyClient.hdel
-
-    Delete the specified `hashkey` in the specified `hashname`.
-    Raise a `redisutil.KeyNotFoundError` if it doesn’t exist.
-
-    **arguments**:
-    `hashname`:specifies the hash name to redis.
-
-    `hashkey`:specifies the hash key to redis.
+     **return**: None
+     ###  RedisProxyClient.get
+     Get the value with `key`. Raise a `redisutil.KeyNotFoundError` if the key doesn’t exist.
 
     `retry`:try to send request for another N times while failed to send request.
-    By default, it is `0`.
-    
-    **return**: None
+     By default, it is `0`.
 
-    ###  RedisProxyClient.set
+     **return**: the value at `key`.
 
-    Set the value at `key` to `val`.
-    **arguments**:
-    `key`: specifies the key to redis.
-    `val`: specifies the value to redis.
-    `expire`: the expire time on `key` in msec. Defaults to `None`.
-    `retry`: try to send request for another N times while failed to send request.
-    By default, it is `0`.
+     ### RedisProxyClient.hdel
 
-    **return**: nothing
+     Delete the specified `hashkey` in the specified `hashname`.
+     Raise a `redisutil.KeyNotFoundError` if it doesn’t exist.
 
-    ###  RedisProxyClient.hget
+     **arguments**:
+     `hashname`:specifies the hash name to redis.
 
-    Return the value of `haskkey` within the `haskname`.
-    Raise a `redisutil.KeyNotFoundError` if it doesn’t exist.
+     `hashkey`:specifies the hash key to redis.
 
-    **arguments**:
-    `hashname`: specifies the hash name to redis.
-    `hashkey`: specifies the hash key to redis.
-    `retry`: try to send request for another N times while failed to send request.
-    By default, it is `0`.
+     `retry`:try to send request for another N times while failed to send request.
+     By default, it is `0`.
 
-    **return**: the value of `hashkey` within the `hashname`.
+     **return**: None
 
-    ###  RedisProxyClient.hset
+     ###  RedisProxyClient.set
 
-    Set `hashkey` to `val` within `hashname`.
+     Set the value at `key` to `val`.
+     **arguments**:
+     `key`: specifies the key to redis.
+     `val`: specifies the value to redis.
+     `expire`: the expire time on `key` in msec. Defaults to `None`.
+     `retry`: try to send request for another N times while failed to send request.
+     By default, it is `0`.
 
-    **arguments**:
+     **return**: nothing
 
-    `hashname`: specifies the hash name to redis.
+     ###  RedisProxyClient.hget
 
-    `hashkey`: specifies the hash key to redis.
+     Return the value of `haskkey` within the `haskname`.
+     Raise a `redisutil.KeyNotFoundError` if it doesn’t exist.
 
-    `val`: specifies the value to redis.
+     **arguments**:
+     `hashname`: specifies the hash name to redis.
+     `hashkey`: specifies the hash key to redis.
+     `retry`: try to send request for another N times while failed to send request.
+     By default, it is `0`.
 
-    `expire`: the expire time on `hashkey` within `hashname` in msec. Defaults to `None`.
+     **return**: the value of `hashkey` within the `hashname`.
 
-    `retry`: try to send request for another N times while failed to send request.
-    By default, it is `0`.
+     ###  RedisProxyClient.hset
 
-    **return**: nothing
+     Set `hashkey` to `val` within `hashname`.
 
-    ###  RedisProxyClient.hkeys
+     **arguments**:
 
-    Return the list of keys within `hashname`.
-    Raise a `redisutil.KeyNotFoundError` if the `hashname` doesn’t exist.
+     `hashname`: specifies the hash name to redis.
 
-    **arguments**:
+     `hashkey`: specifies the hash key to redis.
 
-    `hashname`: specifies the hash name to redis.
+     `val`: specifies the value to redis.
 
-    `retry`: try to send request for another N times while failed to send request.
-    By default, it is `0`.
+     `expire`: the expire time on `hashkey` within `hashname` in msec. Defaults to `None`.
 
-    **return**: a `list` contains all the keys.
+     `retry`: try to send request for another N times while failed to send request.
+     By default, it is `0`.
 
-    ###  RedisProxyClient.hvals
+     **return**: nothing
 
-    Return the list of values within `hashname`.
-    Raise a `redisutil.KeyNotFoundError` if the `hashname` doesn’t exist.
+     ###  RedisProxyClient.hkeys
 
-    **arguments**:
+     Return the list of keys within `hashname`.
+     Raise a `redisutil.KeyNotFoundError` if the `hashname` doesn’t exist.
 
-    `hashname`: specifies the hash name to redis.
+     **arguments**:
 
-    `retry`: try to send request for another N times while failed to send request.
-    By default, it is `0`.
+     `hashname`: specifies the hash name to redis.
 
-    **return**: a `list` contains all the values.
+     `retry`: try to send request for another N times while failed to send request.
+     By default, it is `0`.
 
-    ###  RedisProxyClient.hgetall
+     **return**: a `list` contains all the keys.
 
-    Return a dict of the hash’s name/value pairs.
-    Raise a `redisutil.KeyNotFoundError` if the `hashname` doesn’t exist.
+     ###  RedisProxyClient.hvals
 
-    **arguments**:
+     Return the list of values within `hashname`.
+     Raise a `redisutil.KeyNotFoundError` if the `hashname` doesn’t exist.
 
-    `hashname`:specifies the hash name to redis.
+     **arguments**:
 
-    `retry`:try to send request for another N times while failed to send request.
-    By default, it is `0`.
+     `hashname`: specifies the hash name to redis.
 
-    **return**: a `dict` of the hash’s name/value pairs.
+     `retry`: try to send request for another N times while failed to send request.
+     By default, it is `0`.
+
+     **return**: a `list` contains all the values.
+
+     ###  RedisProxyClient.hgetall
+
+     Return a dict of the hash’s name/value pairs.
+     Raise a `redisutil.KeyNotFoundError` if the `hashname` doesn’t exist.
+
+     **arguments**:
+
+     `hashname`:specifies the hash name to redis.
+
+     `retry`:try to send request for another N times while failed to send request.
+     By default, it is `0`.
+
+     **return**: a `dict` of the hash’s name/value pairs.
     """
+
     methods = {
         # get(key, retry=0)
-        'get': ('get', 'GET', 2, ()),
-
+        "get": ("get", "GET", 2, ()),
         # set(key, val, expire=None, retry=0)
-        'set': ('set', 'PUT', 4, ('expire',)),
-
+        "set": ("set", "PUT", 4, ("expire",)),
         # hget(hashname, hashkey, retry=0)
-        'hget': ('hget', 'GET', 3, ()),
-
+        "hget": ("hget", "GET", 3, ()),
         # hset(hashname, hashkey, val, expire=None, retry=0)
-        'hset': ('hset', 'PUT', 5, ('expire',)),
-
+        "hset": ("hset", "PUT", 5, ("expire",)),
         # hkeys(hashname, retry=0)
-        'hkeys': ('hkeys', 'GET', 2, ()),
-
+        "hkeys": ("hkeys", "GET", 2, ()),
         # hvals(hashname, retry=0)
-        'hvals': ('hvals', 'GET', 2, ()),
-
+        "hvals": ("hvals", "GET", 2, ()),
         # hgetall(hashname, retry=0)
-        'hgetall': ('hgetall', 'GET', 2, ()),
-
+        "hgetall": ("hgetall", "GET", 2, ()),
         # delete(key, retry=0)
-        'delete': ('del', 'DELETE', 2, ()),
-
+        "delete": ("del", "DELETE", 2, ()),
         # hdel(hashname, key, retry=0)
-        'hdel': ('hdel', 'DELETE', 3, ()),
+        "hdel": ("hdel", "DELETE", 3, ()),
     }
 
     def __init__(self, hosts, proxy_hosts=None, nwr=None, ak_sk=None, timeout=None):
@@ -309,61 +306,61 @@ class RedisProxyClient(object):
         self.access_key, self.secret_key = ak_sk
 
         self.timeout = timeout or DEFAULT_TIMEOUT
-        self.ver = '/redisproxy/v1'
+        self.ver = "/redisproxy/v1"
 
         for mtd_name, mtd_info in self.methods.items():
             api_obj = SetAPI(self, mtd_info[0], mtd_info[1:])
             setattr(self, mtd_name, api_obj.api)
 
     def _sign_req(self, req):
-        sign_payload = True if 'body' in req else False
+        sign_payload = True if "body" in req else False
         signer = k3awssign.Signer(self.access_key, self.secret_key)
         sign_ctx = signer.add_auth(req, query_auth=True, sign_payload=sign_payload)
-        logger.debug('signing details: {ctx}'.format(ctx=sign_ctx))
+        logger.debug("signing details: {ctx}".format(ctx=sign_ctx))
 
     def _make_req_uri(self, params, qs):
         path = [self.ver]
         path.extend(params)
 
         qs_list = [
-            'n={n}'.format(n=self.n),
-            'w={w}'.format(w=self.w),
-            'r={r}'.format(r=self.r),
+            "n={n}".format(n=self.n),
+            "w={w}".format(w=self.w),
+            "r={r}".format(r=self.r),
         ]
         for k, v in qs.items():
             if v is None:
                 continue
 
-            qs_list.append('{k}={v}'.format(k=k, v=v))
+            qs_list.append("{k}={v}".format(k=k, v=v))
 
-        return '{p}?{qs}'.format(p='/'.join(path), qs='&'.join(qs_list))
+        return "{p}?{qs}".format(p="/".join(path), qs="&".join(qs_list))
 
     def _req(self, req):
-        if 'headers' not in req:
-            req['headers'] = {
-                'host': '{ip}:{port}'.format(ip=self.ip, port=self.port),
+        if "headers" not in req:
+            req["headers"] = {
+                "host": "{ip}:{port}".format(ip=self.ip, port=self.port),
             }
 
-        elif 'host' not in req['headers']:
-            req['headers']['host'] = '{ip}:{port}'.format(ip=self.ip, port=self.port)
+        elif "host" not in req["headers"]:
+            req["headers"]["host"] = "{ip}:{port}".format(ip=self.ip, port=self.port)
 
-        body = req.get('body', None)
+        body = req.get("body", None)
         if body is not None:
-            req['headers']['Content-Length'] = len(body)
+            req["headers"]["Content-Length"] = len(body)
 
         self._sign_req(req)
 
         cli = k3http.Client(self.ip, self.port, self.timeout)
-        cli.send_request(req['uri'], method=req['verb'], headers=req['headers'])
+        cli.send_request(req["uri"], method=req["verb"], headers=req["headers"])
         if body is not None:
-            cli.send_body(req['body'])
+            cli.send_body(req["body"])
 
         cli.read_response()
         res = cli.read_body(None)
 
-        msg = 'Status:{s} req:{req} res:{res} server:{ip}:{p}'.format(
-            s=cli.status, req=repr(req), res=repr(res),
-            ip=self.ip, p=self.port)
+        msg = "Status:{s} req:{req} res:{res} server:{ip}:{p}".format(
+            s=cli.status, req=repr(req), res=repr(res), ip=self.ip, p=self.port
+        )
 
         if cli.status == 404:
             raise KeyNotFoundError(msg)
@@ -377,14 +374,14 @@ class RedisProxyClient(object):
     @_retry
     def _api(self, verb, path, body, qs):
         req = {
-            'verb': verb,
-            'uri': self._make_req_uri(path, qs),
+            "verb": verb,
+            "uri": self._make_req_uri(path, qs),
         }
 
         if body is not None:
-            req['body'] = body
+            req["body"] = body
 
-        if verb == 'GET':
+        if verb == "GET":
             rst = self._req(req)
             return k3utfjson.load(rst)
 
