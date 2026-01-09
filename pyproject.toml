@@ -41,6 +41,10 @@ dev = [
     "pytest>=7.0",
     "ruff",
     "coverage",
+    "k3ut",
+    "k3thread",
+    "k3utdocker",
+    "mock",
 ]
 publish = [
     "build",
