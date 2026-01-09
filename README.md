@@ -1,7 +1,6 @@
 # k3redisutil
 
 [![Action-CI](https://github.com/pykit3/k3redisutil/actions/workflows/python-package.yml/badge.svg)](https://github.com/pykit3/k3redisutil/actions/workflows/python-package.yml)
-[![Build Status](https://travis-ci.com/pykit3/k3redisutil.svg?branch=master)](https://travis-ci.com/pykit3/k3redisutil)
 [![Documentation Status](https://readthedocs.org/projects/k3redisutil/badge/?version=stable)](https://k3redisutil.readthedocs.io/en/stable/?badge=stable)
 [![Package](https://img.shields.io/pypi/pyversions/k3redisutil)](https://pypi.org/project/k3redisutil)
 
