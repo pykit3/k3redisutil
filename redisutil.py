@@ -3,10 +3,10 @@ import os
 import threading
 import time
 from collections import defaultdict
-
-import redis
+from typing import ClassVar
 
 import k3utfjson
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -64,13 +64,12 @@ def wait_serve(ip_port, timeout=5):
             logger.info("can not connect to redis: " + repr(ip_port) + " " + repr(e))
             time.sleep(0.1)
             continue
-    else:
-        logger.error("can not connect to redis: " + repr(ip_port))
-        raise
+    logger.error("can not connect to redis: " + repr(ip_port))
+    raise redis.ConnectionError("can not connect to redis: " + repr(ip_port))
     # if redis does not respond in `timeout` seconds.
 
 
-class RedisChannel(object):
+class RedisChannel:
     """
     send message `data` through `channel`.
     `channel` is a list in redis.
@@ -80,7 +79,7 @@ class RedisChannel(object):
     recv is a lpop operation that pops an item from the start of a list.
     """
 
-    other_peer = {
+    other_peer: ClassVar[dict] = {
         "client": "server",
         "server": "client",
     }
@@ -126,8 +125,8 @@ class RedisChannel(object):
 
         self.channel = channel
         self.peer = peer.lower()
-        self.send_list_name = "/".join([self.channel, self.peer])
-        self.recv_list_name = "/".join([self.channel, self.other_peer[self.peer]])
+        self.send_list_name = f"{self.channel}/{self.peer}"
+        self.recv_list_name = f"{self.channel}/{self.other_peer[self.peer]}"
         self.timeout = timeout
 
     def send_msg(self, data):

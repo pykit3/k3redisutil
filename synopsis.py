@@ -1,5 +1,6 @@
-import k3redisutil
 import time
+
+import k3redisutil
 
 # Using redis as a duplex cross process communication channel pool.
 

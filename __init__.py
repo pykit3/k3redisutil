@@ -6,29 +6,28 @@ from importlib.metadata import version
 
 __version__ = version("k3redisutil")
 
-from .redisutil import (
-    get_client,
-    wait_serve,
-    normalize_ip_port,
-    RedisChannel,
-)
-
 from .redis_proxy_cli import (
     KeyNotFoundError,
+    RedisProxyClient,
     RedisProxyError,
     SendRequestError,
     ServerResponseError,
-    RedisProxyClient,
+)
+from .redisutil import (
+    RedisChannel,
+    get_client,
+    normalize_ip_port,
+    wait_serve,
 )
 
 __all__ = [
-    "get_client",
-    "wait_serve",
-    "normalize_ip_port",
-    "RedisChannel",
     "KeyNotFoundError",
+    "RedisChannel",
+    "RedisProxyClient",
     "RedisProxyError",
     "SendRequestError",
     "ServerResponseError",
-    "RedisProxyClient",
+    "get_client",
+    "normalize_ip_port",
+    "wait_serve",
 ]

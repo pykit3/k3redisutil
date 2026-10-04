@@ -1,13 +1,10 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import logging
-import socket
+from typing import ClassVar
 
 import k3awssign
-from k3confloader import conf
 import k3http
 import k3utfjson
+from k3confloader import conf
 
 logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 2
@@ -19,16 +16,12 @@ class RedisProxyError(Exception):
     It is a subclass of `Exception`.
     """
 
-    pass
-
 
 class SendRequestError(RedisProxyError):
     """
     It is a subclass of `redisutil.RedisProxyError`.
     Raise if failed to send request to redis proxy server.
     """
-
-    pass
 
 
 class KeyNotFoundError(RedisProxyError):
@@ -37,8 +30,6 @@ class KeyNotFoundError(RedisProxyError):
     Raise if key not found (redis proxy server return a `404`).
     """
 
-    pass
-
 
 class ServerResponseError(RedisProxyError):
     """
@@ -46,8 +37,6 @@ class ServerResponseError(RedisProxyError):
     Raise if http-status not in `(200, 404)` return from redis proxy server.
 
     """
-
-    pass
 
 
 def _proxy(func):
@@ -64,8 +53,7 @@ def _proxy(func):
                     return func(self, hosts, verb, retry, *args)
                 except RedisProxyError as e:
                     err_list.append(e)
-            else:
-                raise err_list[-1]
+            raise err_list[-1]
 
         else:
             for hosts in all_hosts:
@@ -88,19 +76,16 @@ def _retry(func):
                 try:
                     return func(self, verb, *args)
 
-                except (k3http.HttpError, socket.error) as e:
-                    logger.exception(
-                        "{e} while send request to redis proxy with {ip}:{p}".format(e=repr(e), ip=ip, p=port)
-                    )
+                except (OSError, k3http.HttpError) as e:
+                    logger.exception(f"while send request to redis proxy with {ip}:{port}")
                     err_list.append(e)
 
-        else:
-            raise SendRequestError(repr(err_list[-1]))
+        raise SendRequestError(repr(err_list[-1]))
 
     return _wrapper
 
 
-class SetAPI(object):
+class SetAPI:
     def __init__(self, cli, redis_op, mtd_info):
         self.cli = cli
         self.redis_op = redis_op.upper()
@@ -137,7 +122,7 @@ class SetAPI(object):
         return self.cli._api(self.http_mtd, retry, path, body, qs)
 
 
-class RedisProxyClient(object):
+class RedisProxyClient:
     """
      redis operation, http method, count of args, optional args name
 
@@ -261,7 +246,7 @@ class RedisProxyClient(object):
      **return**: a `dict` of the hash’s name/value pairs.
     """
 
-    methods = {
+    methods: ClassVar[dict] = {
         # get(key, retry=0)
         "get": ("get", "GET", 2, ()),
         # set(key, val, expire=None, retry=0)
@@ -313,36 +298,36 @@ class RedisProxyClient(object):
             setattr(self, mtd_name, api_obj.api)
 
     def _sign_req(self, req):
-        sign_payload = True if "body" in req else False
+        sign_payload = "body" in req
         signer = k3awssign.Signer(self.access_key, self.secret_key)
         sign_ctx = signer.add_auth(req, query_auth=True, sign_payload=sign_payload)
-        logger.debug("signing details: {ctx}".format(ctx=sign_ctx))
+        logger.debug(f"signing details: {sign_ctx}")
 
     def _make_req_uri(self, params, qs):
         path = [self.ver]
         path.extend(params)
 
         qs_list = [
-            "n={n}".format(n=self.n),
-            "w={w}".format(w=self.w),
-            "r={r}".format(r=self.r),
+            f"n={self.n}",
+            f"w={self.w}",
+            f"r={self.r}",
         ]
         for k, v in qs.items():
             if v is None:
                 continue
 
-            qs_list.append("{k}={v}".format(k=k, v=v))
+            qs_list.append(f"{k}={v}")
 
         return "{p}?{qs}".format(p="/".join(path), qs="&".join(qs_list))
 
     def _req(self, req):
         if "headers" not in req:
             req["headers"] = {
-                "host": "{ip}:{port}".format(ip=self.ip, port=self.port),
+                "host": f"{self.ip}:{self.port}",
             }
 
         elif "host" not in req["headers"]:
-            req["headers"]["host"] = "{ip}:{port}".format(ip=self.ip, port=self.port)
+            req["headers"]["host"] = f"{self.ip}:{self.port}"
 
         body = req.get("body", None)
         if body is not None:
@@ -358,9 +343,7 @@ class RedisProxyClient(object):
         cli.read_response()
         res = cli.read_body(None)
 
-        msg = "Status:{s} req:{req} res:{res} server:{ip}:{p}".format(
-            s=cli.status, req=repr(req), res=repr(res), ip=self.ip, p=self.port
-        )
+        msg = f"Status:{cli.status} req:{req!r} res:{res!r} server:{self.ip}:{self.port}"
 
         if cli.status == 404:
             raise KeyNotFoundError(msg)

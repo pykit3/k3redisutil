@@ -1,18 +1,18 @@
-import mock
 import os
 import sys
 import time
 import unittest
 import urllib.parse
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import ClassVar
+from unittest import mock
 
-from http.server import BaseHTTPRequestHandler
-from http.server import HTTPServer
+import k3thread
+import k3ut
+import k3utdocker
+import k3utfjson
 
 import k3redisutil
-import k3thread
-import k3utdocker
-import k3ut
-import k3utfjson
 
 dd = k3ut.dd
 
@@ -124,8 +124,8 @@ class TestRedisRecreate(unittest.TestCase):
 
 
 class TestRedisProxyClient(unittest.TestCase):
-    response = {}
-    request = {}
+    response: ClassVar[dict] = {}
+    request: ClassVar[dict] = {}
     access_key = "test_accesskey"
     secret_key = "test_secretkey"
 
@@ -251,7 +251,7 @@ class TestRedisProxyClient(unittest.TestCase):
             res = self.cli.get(key, retry_cnt)
             time.sleep(0.1)
 
-            exp_path = "{ver}/GET/{k}".format(ver=self.cli.ver, k=key)
+            exp_path = f"{self.cli.ver}/GET/{key}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
@@ -275,7 +275,7 @@ class TestRedisProxyClient(unittest.TestCase):
             res = self.cli.hget(hname, hkey)
             time.sleep(0.1)
 
-            exp_path = "{ver}/HGET/{hn}/{hk}".format(ver=self.cli.ver, hn=hname, hk=hkey)
+            exp_path = f"{self.cli.ver}/HGET/{hname}/{hkey}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
@@ -302,12 +302,12 @@ class TestRedisProxyClient(unittest.TestCase):
             self.cli.set(key, val, expire)
             time.sleep(0.1)
 
-            exp_path = "{ver}/SET/{k}".format(ver=self.cli.ver, k=key)
+            exp_path = f"{self.cli.ver}/SET/{key}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
             if expire is not None:
-                exp_qs += "&expire={e}".format(e=expire)
+                exp_qs += f"&expire={expire}"
 
             self.assertIn(exp_qs, TestRedisProxyClient.request["req-qs"])
             self.assertEqual(k3utfjson.dump(val), TestRedisProxyClient.request["req-body"])
@@ -326,12 +326,12 @@ class TestRedisProxyClient(unittest.TestCase):
             self.cli.hset(hname, key, val, expire=expire)
             time.sleep(0.1)
 
-            exp_path = "{ver}/HSET/{hn}/{hk}".format(ver=self.cli.ver, hn=hname, hk=key)
+            exp_path = f"{self.cli.ver}/HSET/{hname}/{key}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
             if expire is not None:
-                exp_qs += "&expire={e}".format(e=expire)
+                exp_qs += f"&expire={expire}"
 
             self.assertIn(exp_qs, TestRedisProxyClient.request["req-qs"])
             self.assertEqual(k3utfjson.dump(val), TestRedisProxyClient.request["req-body"])
@@ -348,7 +348,7 @@ class TestRedisProxyClient(unittest.TestCase):
             self.cli.hkeys(hname)
             time.sleep(0.1)
 
-            exp_path = "{ver}/HKEYS/{hn}".format(ver=self.cli.ver, hn=hname)
+            exp_path = f"{self.cli.ver}/HKEYS/{hname}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
@@ -357,7 +357,7 @@ class TestRedisProxyClient(unittest.TestCase):
             self.cli.hvals(hname)
             time.sleep(0.1)
 
-            exp_path = "{ver}/HVALS/{hn}".format(ver=self.cli.ver, hn=hname)
+            exp_path = f"{self.cli.ver}/HVALS/{hname}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
@@ -366,7 +366,7 @@ class TestRedisProxyClient(unittest.TestCase):
             self.cli.hgetall(hname)
             time.sleep(0.1)
 
-            exp_path = "{ver}/HGETALL/{hn}".format(ver=self.cli.ver, hn=hname)
+            exp_path = f"{self.cli.ver}/HGETALL/{hname}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
@@ -396,22 +396,22 @@ class TestRedisProxyClient(unittest.TestCase):
             with mock.patch("k3redisutil.RedisProxyClient._sign_req", side_effect=_mock_for_retry):
                 try:
                     self.cli.get("foo", retry=retry_cnt)
-                except Exception:
+                except k3redisutil.SendRequestError:
                     pass
 
                 try:
                     self.cli.hget("foo", "bar", retry=retry_cnt)
-                except Exception:
+                except k3redisutil.SendRequestError:
                     pass
 
                 try:
                     self.cli.set("foo", "val", retry=retry_cnt)
-                except Exception:
+                except k3redisutil.SendRequestError:
                     pass
 
                 try:
                     self.cli.hset("foo", "bar", "val", retry=retry_cnt)
-                except Exception:
+                except k3redisutil.SendRequestError:
                     pass
 
             self.assertEqual(exp_cnt, sess["run_times"])
@@ -428,7 +428,7 @@ class TestRedisProxyClient(unittest.TestCase):
             self.cli.delete(key, retry_cnt)
             time.sleep(0.1)
 
-            exp_path = "{ver}/DEL/{key}".format(ver=self.cli.ver, key=key)
+            exp_path = f"{self.cli.ver}/DEL/{key}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
@@ -447,7 +447,7 @@ class TestRedisProxyClient(unittest.TestCase):
             self.cli.hdel(hname, key, retry_cnt)
             time.sleep(0.1)
 
-            exp_path = "{ver}/HDEL/{hname}/{key}".format(ver=self.cli.ver, hname=hname, key=key)
+            exp_path = f"{self.cli.ver}/HDEL/{hname}/{key}"
             self.assertEqual(exp_path, TestRedisProxyClient.request["req-path"])
 
             exp_qs = "n=3&w=2&r=2"
