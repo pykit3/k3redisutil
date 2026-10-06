@@ -114,7 +114,8 @@ class RedisChannel:
         :param timeout: the expire time of the channel, in second.
         If it is `None`, the channel exists until being cleaned.
         """
-        assert peer in self.other_peer
+        if peer not in self.other_peer:
+            raise ValueError('peer must be "client" or "server", but: ' + repr(peer))
 
         self.ip_port = normalize_ip_port(ip_port)
         self.rcl = get_client(self.ip_port)

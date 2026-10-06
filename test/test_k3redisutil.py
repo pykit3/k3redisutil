@@ -123,6 +123,11 @@ class TestRedisRecreate(unittest.TestCase):
             self.assertEqual(b"5", rst)
 
 
+class TestRedisChannel(unittest.TestCase):
+    def test_invalid_peer(self):
+        self.assertRaises(ValueError, k3redisutil.RedisChannel, redis_port, "/foo", "foo")
+
+
 class TestRedisProxyClient(unittest.TestCase):
     response: ClassVar[dict] = {}
     request: ClassVar[dict] = {}
