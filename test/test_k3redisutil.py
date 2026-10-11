@@ -357,6 +357,14 @@ class TestRedisProxyClient(unittest.TestCase):
             self.assertIn(exp_qs, TestRedisProxyClient.request["req-qs"])
             self.assertEqual(k3utfjson.dump(val), TestRedisProxyClient.request["req-body"])
 
+    def test_set_unicode(self):
+        # '"我"' is 3 characters but 5 bytes in UTF-8.
+        self.cli.set("foo", "我")
+        time.sleep(0.1)
+
+        self.assertEqual(5, TestRedisProxyClient.request["req-length"])
+        self.assertEqual('"我"', TestRedisProxyClient.request["req-body"])
+
     def test_hset(self):
         cases = (
             ("hname1", "key1", "val1", None),
@@ -512,6 +520,7 @@ class HttpHandle(BaseHTTPRequestHandler):
 
         path_res = urllib.parse.urlparse(self.path)
 
+        TestRedisProxyClient.request["req-length"] = int(self.headers.get("Content-Length"))
         TestRedisProxyClient.request["req-body"] = "".join(rst)
         TestRedisProxyClient.request["req-path"] = path_res.path
         TestRedisProxyClient.request["req-qs"] = path_res.query

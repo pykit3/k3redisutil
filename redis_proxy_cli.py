@@ -331,6 +331,9 @@ class RedisProxyClient:
 
         body = req.get("body", None)
         if body is not None:
+            # Content-Length counts bytes, so the body is encoded once, then measured, signed and sent.
+            body = body.encode("utf-8")
+            req["body"] = body
             req["headers"]["Content-Length"] = len(body)
 
         self._sign_req(req)
