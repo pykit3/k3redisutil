@@ -244,6 +244,18 @@ class TestRedisProxyClient(unittest.TestCase):
         self.http_server.server_close()
         self.assertRaises(k3redisutil.SendRequestError, cli.set, "foo", "bar")
 
+    def test_invalid_hosts_and_retry(self):
+        # These arguments leave no host to send a request to.
+        for hosts, proxy_hosts in (([], None), ([self.addr], [[]])):
+            with self.assertRaises(ValueError):
+                k3redisutil.RedisProxyClient(hosts, proxy_hosts=proxy_hosts)
+
+        with self.assertRaises(ValueError):
+            self.cli.get("foo", retry=-1)
+
+        with self.assertRaises(ValueError):
+            self.cli.set("foo", "bar", retry=-1)
+
     def test_send_request_failed(self):
         # close http server
         self.tearDown()

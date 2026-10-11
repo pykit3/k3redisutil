@@ -67,6 +67,9 @@ def _proxy(func):
 def _retry(func):
     def _wrapper(self, hosts, verb, retry, *args):
         retry = retry or 0
+        if retry < 0:
+            raise ValueError(f"retry must not be negative, but: {retry!r}")
+
         err_list = []
         for _ in range(retry + 1):
             for ip, port in hosts:
@@ -278,6 +281,13 @@ class RedisProxyClient:
         If it is `None`, `config.rp_cli_ak_sk` is used.
         :param timeout: timeout of connecting redis proxy server in seconds. Defaults to `None`.
         """
+        if not hosts:
+            raise ValueError(f"hosts must not be empty, but: {hosts!r}")
+
+        for backup_hosts in proxy_hosts or []:
+            if not backup_hosts:
+                raise ValueError(f"proxy_hosts must not hold empty hosts, but: {proxy_hosts!r}")
+
         self.hosts = hosts
         self.proxy_hosts = proxy_hosts
 
