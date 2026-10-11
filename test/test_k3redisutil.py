@@ -60,6 +60,20 @@ class TestRedis(unittest.TestCase):
 
         self.assertEqual(b"1", rst)
 
+    def test_list_channel(self):
+        # Each channel has a list for each peer, and is listed once.
+        for channel in ("/foo/a", "/foo/b", "/bar/c"):
+            for peer in ("client", "server"):
+                ch = k3redisutil.RedisChannel((self.ip, redis_port), channel, peer)
+                ch.send_msg(1)
+
+        # A key without a peer suffix is not a channel.
+        self.rcl.rpush("/foo/x/other", "1")
+
+        ch = k3redisutil.RedisChannel((self.ip, redis_port), "/foo/a", "client")
+        rst = ch.list_channel("/foo/")
+        self.assertEqual([b"/foo/a", b"/foo/b"], rst)
+
 
 class TestRedisRecreate(unittest.TestCase):
     @classmethod

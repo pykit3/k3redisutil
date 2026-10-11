@@ -258,9 +258,10 @@ class RedisChannel:
             raise ValueError('prefix must ends with "/", but:' + repr(prefix))
 
         _prefix = _prefix + "*"
-        channels = self.rcl.keys(_prefix)
+        # SCAN does not block the server as KEYS does on a large keyspace, but it may return a key twice.
+        channels = self.rcl.scan_iter(match=_prefix)
 
-        rst = []
+        rst = set()
         for c in channels:
             for k in self.other_peer:
                 k = "/" + k
@@ -271,8 +272,7 @@ class RedisChannel:
                 logger.info("not a channel: " + repr(c))
                 continue
 
-            if c not in rst:
-                rst.append(c)
+            rst.add(c)
 
         return sorted(rst)
 
