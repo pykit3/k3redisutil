@@ -123,9 +123,49 @@ class TestRedisRecreate(unittest.TestCase):
             self.assertEqual(b"5", rst)
 
 
+class FakeRedis:
+    # The list commands RedisChannel uses, kept in memory.
+    def __init__(self):
+        self.lists = {}
+
+    def rpush(self, name, value):
+        self.lists.setdefault(name, []).append(value)
+
+    def lpop(self, name):
+        values = self.lists.get(name)
+        if not values:
+            return None
+
+        return values.pop(0)
+
+    def blpop(self, name, timeout=0):
+        value = self.lpop(name)
+        if value is None:
+            return None
+
+        return (name, value)
+
+
 class TestRedisChannel(unittest.TestCase):
     def test_invalid_peer(self):
         self.assertRaises(ValueError, k3redisutil.RedisChannel, redis_port, "/foo", "foo")
+
+    def test_brecv_last_msg(self):
+        # A falsy last message, JSON null included, is still the last message.
+        cases = (0, False, "", [], {}, None, 2)
+
+        for last in cases:
+            server = k3redisutil.RedisChannel(redis_port, "/foo", "server")
+            client = k3redisutil.RedisChannel(redis_port, "/foo", "client")
+            server.rcl = client.rcl = FakeRedis()
+
+            server.send_msg(1)
+            server.send_msg(last)
+
+            got = client.brecv_last_msg(timeout=1)
+            self.assertEqual(last, got, repr(last))
+            self.assertIs(type(last), type(got), repr(last))
+            self.assertIsNone(client.recv_msg())
 
 
 class TestRedisProxyClient(unittest.TestCase):

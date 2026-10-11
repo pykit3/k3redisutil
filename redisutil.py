@@ -197,13 +197,21 @@ class RedisChannel:
         If it is `0`, then block until a message is available.
         :return: data that is loaded from json. Or `None` if timeout.
         """
-        msg = self.brecv_msg(timeout=timeout)
-        if msg is None:
+        v = self.rcl.blpop(self.recv_list_name, timeout=timeout)
+        if v is None or len(v) != 2:
             return None
 
-        last = self.recv_last_msg() or msg
+        # v is a tuple, (key, value)
+        _, last = v
 
-        return last
+        # Keep the raw value: a decoded message such as 0 or null can not
+        # tell a message from an empty channel.
+        while True:
+            v = self.rcl.lpop(self.recv_list_name)
+            if v is None:
+                return k3utfjson.load(last)
+
+            last = v
 
     def peek_msg(self):
         """
