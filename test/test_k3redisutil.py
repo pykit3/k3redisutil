@@ -21,9 +21,24 @@ redis_tag = "redis:7-alpine"
 redis_port = 6379
 
 
+def skip_without_docker() -> None:
+    """Skip the calling test class when the Docker daemon cannot be reached.
+
+    The probe uses the client that `k3utdocker` gives the tests, so it sees
+    the daemon the tests would use.
+    """
+    try:
+        k3utdocker.get_client().ping()
+    except Exception as e:
+        # Any failure here means the tests would fail in setup, for a reason
+        # that has nothing to do with k3redisutil.
+        raise unittest.SkipTest(f"Docker daemon is not available: {e!r}") from e
+
+
 class TestRedis(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        skip_without_docker()
         k3utdocker.pull_image(redis_tag)
 
     def setUp(self):
@@ -78,6 +93,7 @@ class TestRedis(unittest.TestCase):
 class TestRedisRecreate(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        skip_without_docker()
         k3utdocker.pull_image(redis_tag)
 
     def setUp(self):
